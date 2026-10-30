@@ -9,6 +9,13 @@ const corsHeaders = {
   "Cache-Control": "no-store"
 };
 
+function jsonError(message, status = 502, details = {}) {
+  return Response.json({ error: message, ...details }, {
+    status,
+    headers: corsHeaders
+  });
+}
+
 export default {
   async fetch(request) {
     const origin = request.headers.get("Origin") || "";
@@ -18,38 +25,49 @@ export default {
     }
 
     if (origin !== ALLOWED_ORIGIN) {
-      return Response.json({ error: "Origine non autorisée." }, { status: 403, headers: corsHeaders });
+      return jsonError("Origine non autorisée.", 403);
     }
 
     if (request.method !== "POST") {
-      return Response.json({ error: "Utilisez POST." }, { status: 405, headers: corsHeaders });
+      return jsonError("Utilisez POST.", 405);
     }
+
+    let username = "";
+    let password = "";
 
     try {
       const body = await request.json();
-      const { server, username, password, action = "", extra = {} } = body || {};
+      const { server, action = "", extra = {} } = body || {};
+      username = typeof body?.username === "string" ? body.username : "";
+      password = typeof body?.password === "string" ? body.password : "";
 
       let parsedServer;
       try {
         parsedServer = new URL(server);
       } catch {
-        return Response.json({ error: "Adresse serveur invalide." }, { status: 400, headers: corsHeaders });
+        return jsonError("Adresse serveur invalide.", 400);
       }
 
-      if (parsedServer.hostname.toLowerCase() !== "shanoto.space" ||
-          typeof username !== "string" || typeof password !== "string" ||
-          !username || !password) {
-        return Response.json({ error: "Paramètres de connexion invalides." }, { status: 400, headers: corsHeaders });
+      if (
+        parsedServer.hostname.toLowerCase() !== "shanoto.space" ||
+        !username ||
+        !password
+      ) {
+        return jsonError("Paramètres de connexion invalides.", 400);
       }
 
       const allowedActions = [
-        "", "get_live_categories", "get_live_streams",
-        "get_vod_categories", "get_vod_streams",
-        "get_series_categories", "get_series"
+        "",
+        "get_live_categories",
+        "get_live_streams",
+        "get_vod_categories",
+        "get_vod_streams",
+        "get_series_categories",
+        "get_series"
       ];
 
       if (!allowedActions.includes(action)) {
-        return Response.json({ error: "Action non autorisée." }, { status: 400, headers: corsHeaders });
+        return jsonError("Action non autorisée.", 400);
       }
 
       const url = new URL("player_api.php", UPSTREAM);
@@ -58,23 +76,71 @@ export default {
       if (action) url.searchParams.set("action", action);
 
       for (const key of ["category_id", "series_id", "vod_id"]) {
-        if (extra && extra[key] != null) url.searchParams.set(key, String(extra[key]));
+        if (extra && extra[key] != null) {
+          url.searchParams.set(key, String(extra[key]));
+        }
       }
 
       const upstream = await fetch(url.toString(), {
-        headers: { "Accept": "application/json, text/plain, */*" },
+        headers: {
+          "Accept": "application/json, text/plain, */*"
+        },
         signal: AbortSignal.timeout(20000)
       });
 
       const data = await upstream.text();
+      const contentType = upstream.headers.get("content-type") || "inconnu";
+
+      if (!upstream.ok) {
+        const preview = data
+          .slice(0, 300)
+          .replaceAll(username, "[identifiant masqué]")
+          .replaceAll(password, "[mot de passe masqué]");
+
+        return jsonError(
+          "Le serveur IPTV a répondu avec une erreur HTTP " +
+            upstream.status + ".",
+          502,
+          {
+            upstreamStatus: upstream.status,
+            upstreamContentType: contentType,
+            upstreamPreview: preview
+          }
+        );
+      }
+
+      try {
+        JSON.parse(data);
+      } catch {
+        const preview = data
+          .slice(0, 300)
+          .replaceAll(username, "[identifiant masqué]")
+          .replaceAll(password, "[mot de passe masqué]");
+
+        return jsonError(
+          "Le serveur IPTV a répondu, mais sa réponse n'est pas du JSON valide.",
+          502,
+          {
+            upstreamStatus: upstream.status,
+            upstreamContentType: contentType,
+            upstreamPreview: preview
+          }
+        );
+      }
+
       return new Response(data, {
-        status: upstream.ok ? 200 : 502,
-        headers: { ...corsHeaders, "Content-Type": "application/json; charset=utf-8" }
+        status: 200,
+        headers: {
+          ...corsHeaders,
+          "Content-Type": "application/json; charset=utf-8"
+        }
       });
     } catch (error) {
-      return Response.json({
-        error: "Erreur passerelle Cloudflare : " + String(error.message || error).slice(0, 200)
-      }, { status: 502, headers: corsHeaders });
+      return jsonError(
+        "Erreur de communication avec le serveur IPTV : " +
+          String(error?.message || error).slice(0, 200),
+        502
+      );
     }
   }
 };
