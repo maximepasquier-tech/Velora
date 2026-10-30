@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VELORA — Votre divertissement, raffiné</title>
+<style>
+:root{--bg:#0b100d;--panel:#121a15;--panel2:#19241d;--sage:#9db79a;--sage2:#c6d8c1;--muted:#9ba79c;--line:#29372e;--white:#f2f4ef}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 80% 0%,#203126 0%,#0b100d 48%);color:var(--white);font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+button,input,select{font:inherit}button{cursor:pointer;border:0;border-radius:12px;padding:11px 16px;background:linear-gradient(135deg,#a9c7a4,#587a60);color:#08100a;font-weight:700}
+button.secondary{background:#202c24;color:var(--white);border:1px solid var(--line)}button:disabled{opacity:.45;cursor:default}
+.app{min-height:100vh;display:grid;grid-template-columns:230px 1fr}.sidebar{padding:28px 18px;border-right:1px solid var(--line);background:#0b100de8;position:sticky;top:0;height:100vh}
+.brand{display:flex;align-items:center;gap:12px;margin:4px 8px 38px}.mark{width:42px;height:42px;border-radius:14px;background:#26382b;display:grid;place-items:center;color:#b8d4b1;font-size:27px;font-weight:300}.brand strong{letter-spacing:.24em;font-size:17px}.brand small{display:block;color:var(--muted);font-size:9px;letter-spacing:.08em;margin-top:3px}
+.nav{display:grid;gap:7px}.nav button{background:transparent;color:#c3cbc3;text-align:left;font-weight:500;border:1px solid transparent}.nav button.active,.nav button:hover{background:#233329;color:white;border-color:#304638}
+.status{position:absolute;bottom:24px;left:24px;right:24px;color:var(--muted);font-size:12px}
+main{padding:34px clamp(20px,4vw,58px);max-width:1600px;width:100%;margin:auto}.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:25px}.eyebrow{color:var(--sage);letter-spacing:.16em;text-transform:uppercase;font-size:11px;font-weight:700}.top h1{font-size:clamp(26px,4vw,42px);margin:5px 0 0;letter-spacing:-.04em}.pill{border:1px solid var(--line);border-radius:99px;padding:8px 13px;color:var(--muted);font-size:12px}
+.hero{border:1px solid #35483a;border-radius:24px;min-height:260px;padding:clamp(24px,4vw,44px);background:linear-gradient(100deg,#18251c 0%,#152019 55%,#263b2c 100%);display:flex;align-items:center;justify-content:space-between;gap:24px;overflow:hidden}
+.hero h2{font-size:clamp(28px,4vw,48px);line-height:1.05;max-width:620px;margin:10px 0}.hero p{color:#c1cbc1;max-width:540px}.hero .random{min-width:220px;min-height:145px;border:1px solid #55735b;border-radius:20px;background:#0e1711aa;color:var(--sage2);display:grid;place-items:center;text-align:center;padding:18px}.dice{font-size:34px}
+.section{margin-top:34px}.sectionhead{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}.section h3{margin:0;font-size:20px}.muted{color:var(--muted)}.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:15px;overflow:hidden;min-width:0}.poster{aspect-ratio:2/3;background:linear-gradient(145deg,#26382b,#101713);display:grid;place-items:center;color:#78917b;font-size:38px;overflow:hidden}.poster img{width:100%;height:100%;object-fit:cover}.cardbody{padding:11px}.cardbody strong{display:block;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.cardbody small{color:var(--muted)}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.toolbar{display:flex;gap:10px;flex-wrap:wrap;margin:20px 0}.toolbar input,.toolbar select,.field input{background:#101812;border:1px solid var(--line);color:var(--white);padding:11px 13px;border-radius:11px;min-width:180px}.toolbar input{flex:1}.empty{padding:35px;border:1px dashed #3b4b3e;border-radius:18px;text-align:center;color:var(--muted)}
+.loginwrap{max-width:580px;margin:8vh auto}.loginbox{background:#111a14;border:1px solid #344638;border-radius:22px;padding:28px;box-shadow:0 20px 80px #0008}.loginbox h2{margin:8px 0}.field{display:grid;gap:7px;margin:15px 0}.field label{color:#c7d0c6;font-size:13px}.field input{width:100%;min-width:0}.note{font-size:12px;color:var(--muted);line-height:1.5}.error{color:#ffb4a8;font-size:13px;margin-top:12px}.success{color:#b8d4b1}.hidden{display:none!important}
+.player{background:#050706;border:1px solid var(--line);border-radius:18px;overflow:hidden}.player video{display:block;width:100%;max-height:65vh;background:#000}.playerinfo{padding:13px 16px;display:flex;justify-content:space-between;gap:12px;align-items:center}
+.list{display:grid;gap:8px}.channel{display:flex;align-items:center;gap:12px;padding:12px;border:1px solid var(--line);background:var(--panel);border-radius:12px;cursor:pointer}.channel:hover{border-color:#78977b}.channel img{width:42px;height:42px;object-fit:contain;background:#202a23;border-radius:8px}.channel .grow{flex:1;min-width:0}.channel strong{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+footer{color:#77847a;font-size:11px;margin:40px 0 10px}
+@media(max-width:760px){.app{display:block}.sidebar{position:static;height:auto;padding:14px;border-right:0;border-bottom:1px solid var(--line)}.brand{margin:0 5px 12px}.nav{display:flex;overflow:auto}.nav button{white-space:nowrap;padding:9px 12px}.status{display:none}main{padding:22px 15px}.hero{display:block}.hero .random{margin-top:20px;min-width:0;min-height:110px}.grid{grid-template-columns:repeat(auto-fill,minmax(120px,1fr))}}
+</style>
+</head>
+<body>
+<div id="login" class="loginwrap">
+  <div class="brand"><div class="mark">V</div><div><strong>VELORA</strong><small>YOUR ENTERTAINMENT. REFINED.</small></div></div>
+  <div class="loginbox">
+    <div class="eyebrow">Votre espace de divertissement</div><h2>Connecter votre abonnement</h2>
+    <p class="muted">Entrez les informations Xtream Codes fournies par votre service IPTV.</p>
+    <form id="loginForm">
+      <div class="field"><label for="server">Adresse du serveur</label><input id="server" placeholder="https://exemple.com:8080" required autocomplete="url"></div>
+      <div class="field"><label for="username">Identifiant</label><input id="username" required autocomplete="username"></div>
+      <div class="field"><label for="password">Mot de passe</label><input id="password" type="password" required autocomplete="current-password"></div>
+      <button type="button" id="connectBtn">Se connecter</button><div id="loginError" class="error" aria-live="polite"></div><p id="jsCheck" class="note">Vérification du fonctionnement…</p>
+    </form>
+    <p class="note">Confidentialité : vos identifiants restent dans cette page et ne sont pas enregistrés durablement. Ils sont envoyés directement au serveur de votre fournisseur. Utilisez uniquement un abonnement et des contenus auxquels vous avez légalement accès.</p>
+    <p class="note">La connexion depuis Safari dépend des autorisations CORS de votre fournisseur. Si le serveur bloque les connexions depuis un navigateur, cette version web ne pourra pas le contourner.</p>
+  </div>
+</div>
+<div id="app" class="app hidden">
+  <aside class="sidebar">
+    <div class="brand"><div class="mark">V</div><div><strong>VELORA</strong><small>YOUR ENTERTAINMENT. REFINED.</small></div></div>
+    <nav class="nav">
+      <button class="active" data-view="home">⌂　Accueil</button><button data-view="live">▣　TV en direct</button><button data-view="films">▤　Films</button><button data-view="series">▧　Séries</button><button data-view="settings">⚙　Paramètres</button>
+    </nav>
+    <div class="status" id="status">Non connecté</div>
+  </aside>
+  <main>
+    <div class="top"><div><div class="eyebrow">Bienvenue dans votre univers</div><h1 id="pageTitle">Découvrez VELORA</h1></div><div class="pill" id="connectionPill">Hors connexion</div></div>
+    <section id="homeView">
+      <div class="hero"><div><div class="eyebrow">Une nouvelle façon de regarder</div><h2>Tu ne sais pas quoi regarder&nbsp;?</h2><p>Laisse VELORA choisir pour toi. Une surprise parmi les films de ta bibliothèque.</p></div><button class="random" id="randomBtn"><span><span class="dice">⚄</span><br><strong>FILM AU HASARD</strong><br><small>Surprends-moi</small></span></button></div>
+      <div class="section"><div class="sectionhead"><h3>À découvrir</h3><span class="muted" id="filmCount">Connectez votre abonnement pour commencer</span></div><div id="randomResult" class="empty">Votre bibliothèque apparaîtra ici après connexion.</div></div>
+      <div class="section"><h3>Accès rapide</h3><div class="toolbar"><button class="secondary" data-goto="live">Télévision en direct</button><button class="secondary" data-goto="films">Explorer les films</button><button class="secondary" data-goto="series">Explorer les séries</button></div></div>
+    </section>
+    <section id="liveView" class="hidden"><div class="toolbar"><input id="liveSearch" placeholder="Rechercher une chaîne…"><select id="liveCats"><option value="">Toutes les catégories</option></select></div><div id="playerWrap" class="player hidden"><video id="video" controls playsinline></video><div class="playerinfo"><strong id="playingTitle">Lecture</strong><button class="secondary" id="closePlayer">Fermer</button></div></div><div id="liveList" class="list"><div class="empty">Connectez-vous pour charger vos chaînes.</div></div></section>
+    <section id="filmsView" class="hidden"><div class="toolbar"><input id="filmSearch" placeholder="Rechercher un film…"><select id="filmCats"><option value="">Toutes les catégories</option></select></div><div id="filmsGrid" class="grid"><div class="empty">Connectez-vous pour charger vos films.</div></div></section>
+    <section id="seriesView" class="hidden"><div class="toolbar"><input id="seriesSearch" placeholder="Rechercher une série…"><select id="seriesCats"><option value="">Toutes les catégories</option></select></div><div id="seriesGrid" class="grid"><div class="empty">Connectez-vous pour charger vos séries.</div></div></section>
+    <section id="settingsView" class="hidden"><div class="loginbox"><h2>Connexion et confidentialité</h2><p class="muted" id="accountInfo">Aucun abonnement connecté.</p><button class="secondary" id="logoutBtn">Se déconnecter</button><p class="note">Cette première version ne conserve pas le mot de passe après fermeture ou actualisation de la page. Les catégories et contenus sont chargés à la demande depuis votre fournisseur.</p></div></section>
+    <footer>VELORA · Prototype personnel · Utilisez uniquement des flux que vous êtes autorisé à consulter.</footer>
+  </main>
+</div>
+<script>
+(function(){
+const $=id=>document.getElementById(id);
+const jsCheck=document.getElementById('jsCheck'); if(jsCheck) jsCheck.textContent='VELORA est prêt. Remplissez les champs puis appuyez sur Se connecter.';
+let creds=null, live=[], films=[], series=[], liveCats=[], filmCats=[], seriesCats=[];
+const cleanServer=s=>s.trim().replace(/\/+$/,'');
+function apiUrl(action,extra={}){const u=new URL(cleanServer(creds.server)+'/player_api.php');u.searchParams.set('username',creds.username);u.searchParams.set('password',creds.password);if(action)u.searchParams.set('action',action);Object.entries(extra).forEach(([k,v])=>u.searchParams.set(k,v));return u.toString()}
+async function api(action,extra={}){const r=await fetch(apiUrl(action,extra));if(!r.ok)throw new Error('Réponse HTTP '+r.status);return await r.json()}
+function showError(msg){$('loginError').textContent=msg}
+function setStatus(t){$('status').textContent=t;$('connectionPill').textContent=t}
+function escapeHtml(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function catOptions(el,cats){el.innerHTML='<option value="">Toutes les catégories</option>'+cats.map(c=>`<option value="${escapeHtml(c.category_id)}">${escapeHtml(c.category_name)}</option>`).join('')}
+function poster(item){return item.cover||item.stream_icon||item.movie_image||''}
+function card(item,type){const img=poster(item);return `<article class="card"><div class="poster">${img?`<img loading="lazy" src="${escapeHtml(img)}" onerror="this.remove()">`:'✦'}</div><div class="cardbody"><strong title="${escapeHtml(item.name)}">${escapeHtml(item.name)}</strong><small>${escapeHtml(item.year||item.releaseDate||item.rating||'')}</small><div style="margin-top:9px"><button class="secondary" style="padding:7px 10px;font-size:12px" data-play-${type}="${escapeHtml(item.stream_id||item.series_id)}">Ouvrir</button></div></div></article>`}
+function renderGrid(target,items,type,search='',cat=''){let list=items.filter(x=>(!search||x.name.toLowerCase().includes(search.toLowerCase()))&&(!cat||String(x.category_id)===cat));$(target).innerHTML=list.length?list.map(x=>card(x,type)).join(''):'<div class="empty">Aucun contenu correspondant.</div>'}
+function view(name){['home','live','films','series','settings'].forEach(v=>$(v+'View').classList.toggle('hidden',v!==name));document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.view===name));$('pageTitle').textContent=({home:'Découvrez VELORA',live:'Télévision en direct',films:'Votre cinéma',series:'Vos séries',settings:'Paramètres'})[name]}
+document.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',()=>view(b.dataset.view)));
+document.querySelectorAll('[data-goto]').forEach(b=>b.addEventListener('click',()=>view(b.dataset.goto)));
+async function connectAccount(){
+  showError('');
+  const serverInput=$('server').value.trim();
+  const usernameInput=$('username').value.trim();
+  const passwordInput=$('password').value;
+  if(!serverInput || !usernameInput || !passwordInput){showError('Remplissez les trois champs avant de continuer.');return;}
+  if(!/^https?:\\/\\//i.test(serverInput)){showError('L’adresse du serveur doit commencer par http:// ou https://');return;}
+  $('connectBtn').disabled=true;
+  $('connectBtn').textContent='Connexion…';
+  showError('Tentative de connexion au serveur…');
+  creds={server:cleanServer(serverInput),username:usernameInput,password:passwordInput};
+  try{
+    const info=await api('');
+    if(!info || (!info.user_info && !info.server_info)) throw new Error('Réponse inattendue du serveur. Vérifiez les informations.');
+    $('login').classList.add('hidden');
+    $('app').classList.remove('hidden');
+    setStatus('Connecté');
+    $('accountInfo').textContent='Serveur : '+creds.server+' · Identifiant : '+creds.username;
+    showError('');
+    await loadFilms();
+    await loadLive();
+  }catch(err){
+    const message=(err && err.message) ? err.message : String(err);
+    creds=null;
+    if(message==='Failed to fetch' || /network|load failed/i.test(message)){
+      showError('Safari ne parvient pas à joindre le serveur. Cause possible : blocage CORS par le fournisseur, adresse/port inaccessible ou certificat HTTPS. Vérifiez l’adresse dans Safari. Si elle s’ouvre mais que la connexion échoue ici, le fournisseur doit autoriser les requêtes depuis notre application web.');
+    }else{
+      showError('Connexion impossible : '+message+'. Vérifiez l’adresse du serveur et vos identifiants.');
+    }
+  }finally{
+    $('connectBtn').disabled=false;
+    $('connectBtn').textContent='Se connecter';
+  }
+}
+$('connectBtn').addEventListener('click',connectAccount);
+$('loginForm').addEventListener('submit',function(e){e.preventDefault();connectAccount();});
+async function loadLive(){try{[liveCats,live]=await Promise.all([api('get_live_categories'),api('get_live_streams')]);catOptions($('liveCats'),liveCats);renderLive();}catch(e){$('liveList').innerHTML='<div class="empty">Impossible de charger les chaînes : '+escapeHtml(e.message)+'</div>'}}
+async function loadFilms(){try{[filmCats,films]=await Promise.all([api('get_vod_categories'),api('get_vod_streams')]);catOptions($('filmCats'),filmCats);$('filmCount').textContent=films.length+' films disponibles';renderGrid('filmsGrid',films,'film');$('randomResult').className='empty';$('randomResult').textContent=films.length+' films chargés. Lance le tirage quand tu veux !';}catch(e){$('filmCount').textContent='Films indisponibles';}}
+async function loadSeries(){try{[seriesCats,series]=await Promise.all([api('get_series_categories'),api('get_series')]);catOptions($('seriesCats'),seriesCats);renderGrid('seriesGrid',series,'series')}catch(e){$('seriesGrid').innerHTML='<div class="empty">Impossible de charger les séries : '+escapeHtml(e.message)+'</div>'}}
+function renderLive(){let q=$('liveSearch').value.toLowerCase(),cat=$('liveCats').value;let a=live.filter(x=>(!q||x.name.toLowerCase().includes(q))&&(!cat||String(x.category_id)===cat));$('liveList').innerHTML=a.length?a.slice(0,600).map(x=>`<div class="channel" data-channel="${escapeHtml(x.stream_id)}">${x.stream_icon?`<img src="${escapeHtml(x.stream_icon)}" onerror="this.style.visibility='hidden'">`:'<div class="mark">▶</div>'}<div class="grow"><strong>${escapeHtml(x.name)}</strong><small class="muted">Chaîne TV</small></div><span class="muted">▶</span></div>`).join(''):'<div class="empty">Aucune chaîne trouvée.</div>'}
+function playLive(id){let x=live.find(c=>String(c.stream_id)===String(id));if(!x)return;const url=cleanServer(creds.server)+'/live/'+encodeURIComponent(creds.username)+'/'+encodeURIComponent(creds.password)+'/'+encodeURIComponent(x.stream_id)+'.ts';$('playerWrap').classList.remove('hidden');$('playingTitle').textContent=x.name;$('video').src=url;$('video').play().catch(()=>{});$('playerWrap').scrollIntoView({behavior:'smooth',block:'start'})}
+function playVod(id){let x=films.find(c=>String(c.stream_id)===String(id));if(!x)return;const ext=(x.container_extension||'mp4').replace(/[^a-z0-9]/gi,'');const url=cleanServer(creds.server)+'/movie/'+encodeURIComponent(creds.username)+'/'+encodeURIComponent(creds.password)+'/'+encodeURIComponent(x.stream_id)+'.'+ext;$('playerWrap').classList.remove('hidden');$('playingTitle').textContent=x.name;$('video').src=url;$('video').play().catch(()=>{});view('live');$('playerWrap').scrollIntoView({behavior:'smooth'})}
+$('liveList').addEventListener('click',e=>{let el=e.target.closest('[data-channel]');if(el)playLive(el.dataset.channel)});
+$('filmsGrid').addEventListener('click',e=>{let el=e.target.closest('[data-play-film]');if(el)playVod(el.dataset.playFilm)});
+$('seriesGrid').addEventListener('click',e=>{let el=e.target.closest('[data-play-series]');if(el){const x=series.find(s=>String(s.series_id)===el.dataset.playSeries);alert('Série sélectionnée : '+(x?.name||'')+'. La navigation saisons/épisodes sera ajoutée dans une prochaine version.')}});
+$('randomBtn').addEventListener('click',()=>{if(!films.length){$('randomResult').className='empty';$('randomResult').textContent='Connectez votre abonnement et chargez vos films avant le tirage.';return}const f=films[Math.floor(Math.random()*films.length)];$('randomResult').className='';$('randomResult').innerHTML=`<div class="channel" style="cursor:default">${poster(f)?`<img style="width:72px;height:100px" src="${escapeHtml(poster(f))}">`:'<div class="mark">✦</div>'}<div class="grow"><div class="eyebrow">Votre film surprise</div><strong style="font-size:18px">${escapeHtml(f.name)}</strong><small class="muted">${escapeHtml(f.year||f.releaseDate||'À découvrir')}</small><p class="muted">Un choix au hasard dans votre catalogue.</p><button id="watchRandom">Regarder</button> <button class="secondary" id="againRandom">Un autre film</button></div></div>`;$('watchRandom').addEventListener('click',()=>playVod(f.stream_id));$('againRandom').addEventListener('click',()=>$('randomBtn').click())});
+['liveSearch','liveCats'].forEach(id=>$(id).addEventListener('input',renderLive));
+['filmSearch','filmCats'].forEach(id=>$(id).addEventListener('input',()=>renderGrid('filmsGrid',films,'film',$('filmSearch').value,$('filmCats').value)));
+['seriesSearch','seriesCats'].forEach(id=>$(id).addEventListener('input',()=>renderGrid('seriesGrid',series,'series',$('seriesSearch').value,$('seriesCats').value)));
+$('nav')?.addEventListener('click',()=>{});
+document.querySelector('[data-view="series"]').addEventListener('click',()=>{if(creds&&!series.length)loadSeries()});
+$('closePlayer').addEventListener('click',()=>{$('video').pause();$('video').removeAttribute('src');$('video').load();$('playerWrap').classList.add('hidden')});
+$('logoutBtn').addEventListener('click',()=>{if($('video').src){$('video').pause();$('video').removeAttribute('src');$('video').load()}creds=null;live=[];films=[];series=[];$('app').classList.add('hidden');$('login').classList.remove('hidden');$('password').value='';setStatus('Non connecté')});
+})();
+</script>
+</body></html>
