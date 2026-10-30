@@ -89,18 +89,19 @@ async function api(action,extra={}){
  if(action)direct.searchParams.set('action',action);
  Object.entries(extra||{}).forEach(([k,v])=>direct.searchParams.set(k,v));
  try{
-   const response=await fetch(direct.toString(),{method:'GET',mode:'cors',cache:'no-store',headers:{'Accept':'application/json, text/plain, */*'}});
-   if(response.ok){const data=await response.json();return data;}
-   if(response.status!==421) throw new Error('Le fournisseur a répondu HTTP '+response.status+'.');
- }catch(directError){
-   if(directError && directError.message && /^Le fournisseur a répondu HTTP /.test(directError.message)) throw directError;
-   console.info('Accès direct bloqué par le navigateur; essai via relais sécurisé.');
+   const response=await fetch(direct.toString(),{
+     method:'GET',
+     mode:'cors',
+     cache:'no-store',
+     headers:{'Accept':'application/json, text/plain, */*'}
+   });
+   const raw=await response.text();
+   if(!response.ok)throw new Error('Le fournisseur a répondu HTTP '+response.status+'.');
+   try{return JSON.parse(raw)}catch{throw new Error('Le fournisseur a répondu, mais sa réponse n’est pas au format JSON.')}
+ }catch(error){
+   if(error && error.message && (error.message.startsWith('Le fournisseur a répondu')||error.message.startsWith('Le fournisseur a répondu,')))throw error;
+   throw new Error('Connexion directe impossible depuis Safari. Le serveur peut bloquer les requêtes du navigateur (CORS) ou HTTP depuis cette page sécurisée. Détail : '+(error&&error.message?error.message:'requête bloquée'));
  }
- const response=await fetch('/api/iptv',{method:'POST',headers:{'Content-Type':'application/json'},cache:'no-store',body:JSON.stringify({server:creds.server,username:creds.username,password:creds.password,action,extra})});
- const raw=await response.text();
- let data;try{data=JSON.parse(raw)}catch{const snippet=raw.replace(/<[^>]*>/g,' ').replace(/\\s+/g,' ').trim().slice(0,180);throw new Error('Relais Vercel HTTP '+response.status+' : '+(snippet||'réponse vide ou non JSON'));}
- if(!response.ok)throw new Error(data.error||('Réponse HTTP '+response.status)+(data.diagnostic?' — '+data.diagnostic:''));
- return data;
 }
 async function loadXmltv(){const r=await fetch('/api/iptv',{method:'POST',headers:{'Content-Type':'application/json'},cache:'no-store',body:JSON.stringify({server:creds.server,username:creds.username,password:creds.password,action:'xmltv'})});if(!r.ok){let d={};try{d=await r.json()}catch{}throw new Error(d.error||('Guide TV HTTP '+r.status))}const xml=await r.text();const doc=new DOMParser().parseFromString(xml,'application/xml');if(doc.querySelector('parsererror'))throw new Error('Guide TV XMLTV illisible');const now=Date.now();epgByChannel={};doc.querySelectorAll('programme').forEach(p=>{const id=p.getAttribute('channel');if(!id)return;const start=parseXmltvDate(p.getAttribute('start')),stop=parseXmltvDate(p.getAttribute('stop'));if(!start||!stop)return;const item={start,stop,title:p.querySelector('title')?.textContent||'Programme',desc:p.querySelector('desc')?.textContent||''};(epgByChannel[id] ||= []).push(item)});Object.values(epgByChannel).forEach(items=>items.sort((a,b)=>a.start-b.start));}
 function parseXmltvDate(value){if(!value)return 0;const m=value.match(/^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})\s*([+-]\d{4})?/);if(!m)return 0;const zone=m[7]||'+0000';return Date.parse(m[1]+'-'+m[2]+'-'+m[3]+'T'+m[4]+':'+m[5]+':'+m[6]+zone.slice(0,3)+':'+zone.slice(3));}
