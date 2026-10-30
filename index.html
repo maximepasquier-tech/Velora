@@ -83,27 +83,32 @@ let creds=null, live=[], films=[], series=[], liveCats=[], filmCats=[], seriesCa
 const cleanServer=s=>s.trim().replace(/\/+$/,'');
 function apiUrl(action,extra={}){const u=new URL(cleanServer(creds.server)+'/player_api.php');u.searchParams.set('username',creds.username);u.searchParams.set('password',creds.password);if(action)u.searchParams.set('action',action);Object.entries(extra).forEach(([k,v])=>u.searchParams.set(k,v));return u.toString()}
 async function api(action,extra={}){
- const base=cleanServer(creds.server);
- const origins=[base];
- if(base.toLowerCase().startsWith('http://')) origins.push(base.replace(/^http:/i,'https:'));
- let lastError='';
- for(const origin of origins){
-   const target=new URL(origin+'/player_api.php');
-   target.searchParams.set('username',creds.username);
-   target.searchParams.set('password',creds.password);
-   if(action)target.searchParams.set('action',action);
-   Object.entries(extra||{}).forEach(([k,v])=>target.searchParams.set(k,v));
-   try{
-     const response=await fetch(target.toString(),{method:'GET',mode:'cors',cache:'no-store',headers:{'Accept':'application/json, text/plain, */*'}});
-     const raw=await response.text();
-     if(!response.ok)throw new Error('Le fournisseur a répondu HTTP '+response.status+'.');
-     try{return JSON.parse(raw)}catch{throw new Error('Le fournisseur a répondu, mais sa réponse n’est pas au format JSON.')}
-   }catch(error){
-     lastError=error&&error.message?error.message:'requête bloquée';
-     if(lastError.startsWith('Le fournisseur a répondu')) throw error;
-   }
+ const relay='https://velora.maximepasquier.workers.dev';
+ let response;
+ try{
+   response=await fetch(relay,{
+     method:'POST',
+     mode:'cors',
+     cache:'no-store',
+     headers:{'Content-Type':'application/json','Accept':'application/json'},
+     body:JSON.stringify({
+       server:cleanServer(creds.server),
+       username:creds.username,
+       password:creds.password,
+       action:action||'',
+       extra:extra||{}
+     })
+   });
+ }catch(error){
+   throw new Error('Connexion au relais Cloudflare impossible : '+(error&&error.message?error.message:'échec réseau'));
  }
- throw new Error('Connexion directe impossible depuis Safari. Essai HTTP et HTTPS effectué. Le serveur peut bloquer les requêtes du navigateur (CORS), ou ne pas accepter HTTPS. Détail : '+lastError);
+ const raw=await response.text();
+ let data;
+ try{data=JSON.parse(raw)}catch{
+   throw new Error('Réponse illisible du relais Cloudflare (HTTP '+response.status+').');
+ }
+ if(!response.ok) throw new Error(data.error||('Le relais Cloudflare a répondu HTTP '+response.status+'.'));
+ return data;
 }
 async function loadXmltv(){const r=await fetch('/api/iptv',{method:'POST',headers:{'Content-Type':'application/json'},cache:'no-store',body:JSON.stringify({server:creds.server,username:creds.username,password:creds.password,action:'xmltv'})});if(!r.ok){let d={};try{d=await r.json()}catch{}throw new Error(d.error||('Guide TV HTTP '+r.status))}const xml=await r.text();const doc=new DOMParser().parseFromString(xml,'application/xml');if(doc.querySelector('parsererror'))throw new Error('Guide TV XMLTV illisible');const now=Date.now();epgByChannel={};doc.querySelectorAll('programme').forEach(p=>{const id=p.getAttribute('channel');if(!id)return;const start=parseXmltvDate(p.getAttribute('start')),stop=parseXmltvDate(p.getAttribute('stop'));if(!start||!stop)return;const item={start,stop,title:p.querySelector('title')?.textContent||'Programme',desc:p.querySelector('desc')?.textContent||''};(epgByChannel[id] ||= []).push(item)});Object.values(epgByChannel).forEach(items=>items.sort((a,b)=>a.start-b.start));}
 function parseXmltvDate(value){if(!value)return 0;const m=value.match(/^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})\s*([+-]\d{4})?/);if(!m)return 0;const zone=m[7]||'+0000';return Date.parse(m[1]+'-'+m[2]+'-'+m[3]+'T'+m[4]+':'+m[5]+':'+m[6]+zone.slice(0,3)+':'+zone.slice(3));}
