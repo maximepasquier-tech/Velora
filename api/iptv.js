@@ -1,20 +1,55 @@
+const http = require('node:http');
+const https = require('node:https');
+
+function requestText(url, redirects = 0) {
+  return new Promise((resolve, reject) => {
+    const transport = url.protocol === 'https:' ? https : http;
+    const req = transport.request(url, {
+      method: 'GET',
+      agent: false,
+      headers: {
+        'Host': url.host,
+        'User-Agent': 'IPTVSmartersPro/1.1.1',
+        'Accept': 'application/json, text/plain, */*',
+        'Connection': 'close'
+      }
+    }, (response) => {
+      const status = response.statusCode || 502;
+      if ([301, 302, 303, 307, 308].includes(status) && response.headers.location) {
+        response.resume();
+        if (redirects >= 3) return reject(new Error('Trop de redirections du serveur IPTV.'));
+        const next = new URL(response.headers.location, url);
+        if (next.hostname !== url.hostname || !['http:', 'https:'].includes(next.protocol)) {
+          return reject(new Error('Le serveur IPTV redirige vers un autre domaine.'));
+        }
+        return resolve(requestText(next, redirects + 1));
+      }
+      let body = '';
+      response.setEncoding('utf8');
+      response.on('data', chunk => {
+        body += chunk;
+        if (body.length > 30 * 1024 * 1024) {
+          req.destroy(new Error('Réponse du fournisseur trop volumineuse.'));
+        }
+      });
+      response.on('end', () => resolve({ status, headers: response.headers, body }));
+    });
+    req.setTimeout(18000, () => req.destroy(new Error('Délai de connexion dépassé.')));
+    req.on('error', reject);
+    req.end();
+  });
+}
+
 module.exports = async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store, max-age=0');
-  res.setHeader('X-Content-Type-Options', 'nosniff');
-
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST');
     return res.status(405).json({ error: 'Méthode non autorisée.' });
   }
 
   try {
-    const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body || {});
-    const server = body.server;
-    const username = body.username;
-    const password = body.password;
-    const action = body.action || '';
-    const extra = body.extra || {};
-
+    const input = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body || {});
+    const { server, username, password, action = '', extra = {} } = input;
     if (typeof server !== 'string' || typeof username !== 'string' ||
         typeof password !== 'string' || !server.trim() || !username.trim() || !password) {
       return res.status(400).json({ error: 'Informations de connexion manquantes.' });
@@ -29,9 +64,8 @@ module.exports = async function handler(req, res) {
       return res.status(400).json({ error: 'Adresse serveur HTTP(S) invalide.' });
     }
     const host = base.hostname.toLowerCase();
-    if (host === 'localhost' || host.endsWith('.localhost') ||
-        host.endsWith('.local') || host.endsWith('.internal') ||
-        host === '127.0.0.1' || host === '::1' ||
+    if (host === 'localhost' || host.endsWith('.localhost') || host.endsWith('.local') ||
+        host.endsWith('.internal') || host === '127.0.0.1' || host === '::1' ||
         /^10\\./.test(host) || /^192\\.168\\./.test(host) ||
         /^172\\.(1[6-9]|2[0-9]|3[01])\\./.test(host)) {
       return res.status(400).json({ error: 'Adresse serveur non autorisée.' });
@@ -50,7 +84,6 @@ module.exports = async function handler(req, res) {
     target.searchParams.set('username', username);
     target.searchParams.set('password', password);
     if (action && !isXmltv) target.searchParams.set('action', action);
-
     if (extra && typeof extra === 'object' && !Array.isArray(extra)) {
       for (const key of ['category_id', 'series_id', 'vod_id']) {
         if (extra[key] !== undefined && extra[key] !== null) {
@@ -59,50 +92,39 @@ module.exports = async function handler(req, res) {
       }
     }
 
-    const upstream = await fetch(target.toString(), {
-      method: 'GET',
-      headers: {
-        'Accept': 'application/json, text/plain, */*',
-        'User-Agent': 'IPTVSmartersPro/1.1.1'
-      },
-      redirect: 'follow'
-    });
-
-    const responseText = await upstream.text();
-    if (!upstream.ok) {
-      const detail = responseText.replace(/[\\r\\n\\t]+/g, ' ').slice(0, 500);
+    const upstream = await requestText(target);
+    if (upstream.status < 200 || upstream.status >= 300) {
       return res.status(502).json({
         error: 'Le fournisseur IPTV a répondu avec HTTP ' + upstream.status + '.',
-        diagnostic: detail || 'Le fournisseur n’a fourni aucun détail.'
+        diagnostic: upstream.body.replace(/[\\r\\n\\t]+/g, ' ').slice(0, 450),
+        upstreamServer: String(upstream.headers.server || '').slice(0, 100)
       });
     }
 
-    if (responseText.length > (isXmltv ? 30 : 12) * 1024 * 1024) {
+    if (upstream.body.length > (isXmltv ? 30 : 12) * 1024 * 1024) {
       return res.status(502).json({ error: 'Réponse du fournisseur trop volumineuse.' });
     }
-
     if (isXmltv) {
-      if (!responseText.includes('<tv') && !responseText.includes('<!DOCTYPE tv')) {
+      if (!upstream.body.includes('<tv') && !upstream.body.includes('<!DOCTYPE tv')) {
         return res.status(502).json({ error: 'Réponse XMLTV invalide.' });
       }
       res.setHeader('Content-Type', 'application/xml; charset=utf-8');
-      return res.status(200).send(responseText);
+      return res.status(200).send(upstream.body);
     }
 
     let data;
     try {
-      data = JSON.parse(responseText);
+      data = JSON.parse(upstream.body);
     } catch {
       return res.status(502).json({
         error: 'Le fournisseur a renvoyé une réponse non JSON.',
-        diagnostic: responseText.replace(/[\\r\\n\\t]+/g, ' ').slice(0, 300)
+        diagnostic: upstream.body.replace(/[\\r\\n\\t]+/g, ' ').slice(0, 300)
       });
     }
     return res.status(200).json(data);
   } catch (error) {
-    const message = error && error.name === 'TimeoutError'
-      ? 'Le serveur IPTV met trop de temps à répondre.'
-      : (error && error.message ? String(error.message).slice(0, 300) : 'Erreur interne du relais VELORA.');
-    return res.status(502).json({ error: message });
+    return res.status(502).json({
+      error: error && error.message ? String(error.message).slice(0, 300) : 'Erreur interne du relais VELORA.'
+    });
   }
 };
