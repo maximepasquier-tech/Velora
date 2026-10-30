@@ -83,14 +83,13 @@ let creds=null, live=[], films=[], series=[], liveCats=[], filmCats=[], seriesCa
 const cleanServer=s=>s.trim().replace(/\/+$/,'');
 function apiUrl(action,extra={}){const u=new URL(cleanServer(creds.server)+'/player_api.php');u.searchParams.set('username',creds.username);u.searchParams.set('password',creds.password);if(action)u.searchParams.set('action',action);Object.entries(extra).forEach(([k,v])=>u.searchParams.set(k,v));return u.toString()}
 async function api(action,extra={}){
- const relay='https://velora.maximepasquier.workers.dev';
+ const relay='/api';
  let response;
  try{
    response=await fetch(relay,{
      method:'POST',
-     mode:'cors',
      cache:'no-store',
-     headers:{'Content-Type':'application/json','Accept':'application/json'},
+     headers:{'Content-Type':'application/json','Accept':'application/json','X-Relay-Key':window.__VELORA_RELAY_KEY__||''},
      body:JSON.stringify({
        server:cleanServer(creds.server),
        username:creds.username,
@@ -100,19 +99,19 @@ async function api(action,extra={}){
      })
    });
  }catch(error){
-   throw new Error('Connexion au relais Cloudflare impossible : '+(error&&error.message?error.message:'échec réseau'));
+   throw new Error('Connexion au relais local impossible : '+(error&&error.message?error.message:'échec réseau'));
  }
  const raw=await response.text();
  let data;
  try{data=JSON.parse(raw)}catch{
-   throw new Error('Réponse illisible du relais Cloudflare (HTTP '+response.status+').');
+   throw new Error('Réponse illisible du relais local (HTTP '+response.status+').');
  }
  if(!response.ok){
    const details=[];
    if(data.upstreamStatus) details.push('Statut fournisseur : '+data.upstreamStatus);
    if(data.upstreamContentType) details.push('Type de réponse : '+data.upstreamContentType);
    if(data.upstreamPreview) details.push('Détail : '+String(data.upstreamPreview).slice(0,220));
-   throw new Error((data.error||('Le relais Cloudflare a répondu HTTP '+response.status+'.'))+(details.length?' — '+details.join(' | '):''));
+   throw new Error((data.error||('Le relais local a répondu HTTP '+response.status+'.'))+(details.length?' — '+details.join(' | '):''));
  }
  return data;
 }
