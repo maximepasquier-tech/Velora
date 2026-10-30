@@ -36,6 +36,7 @@ footer{color:#77847a;font-size:11px;margin:40px 0 10px}
       <div class="field"><label for="server">Adresse du serveur</label><input id="server" placeholder="https://exemple.com:8080" required autocomplete="url"></div>
       <div class="field"><label for="username">Identifiant</label><input id="username" required autocomplete="username"></div>
       <div class="field"><label for="password">Mot de passe</label><input id="password" type="password" required autocomplete="current-password"></div>
+      <label class="note" style="display:flex;gap:9px;align-items:center;margin:12px 0"><input id="rememberCredentials" type="checkbox" checked> Mémoriser mes identifiants sur cet iPhone</label>
       <button type="button" id="connectBtn">Se connecter</button><div id="loginError" class="error" aria-live="polite"></div><p id="jsCheck" class="note">Vérification du fonctionnement…</p>
     </form>
     <p class="note">Confidentialité : vos identifiants restent dans cette page et ne sont pas enregistrés durablement. Ils sont envoyés directement au serveur de votre fournisseur. Utilisez uniquement un abonnement et des contenus auxquels vous avez légalement accès.</p>
@@ -69,6 +70,16 @@ footer{color:#77847a;font-size:11px;margin:40px 0 10px}
 const $=id=>document.getElementById(id);
 const jsCheck=document.getElementById('jsCheck'); if(jsCheck) jsCheck.textContent='VELORA est prêt. Remplissez les champs puis appuyez sur Se connecter.';
 let creds=null, live=[], films=[], series=[], liveCats=[], filmCats=[], seriesCats=[];
+ const CREDENTIALS_KEY='velora_saved_xtream_v1';
+ try {
+   const saved=JSON.parse(localStorage.getItem(CREDENTIALS_KEY)||'null');
+   if(saved && saved.server && saved.username && saved.password){
+     $('server').value=saved.server;
+     $('username').value=saved.username;
+     $('password').value=saved.password;
+     $('jsCheck').textContent='Identifiants mémorisés sur cet appareil. Appuyez sur Se connecter.';
+   }
+ } catch(e) { /* stockage indisponible : saisie manuelle */ }
 const cleanServer=s=>s.trim().replace(/\/+$/,'');
 function apiUrl(action,extra={}){const u=new URL(cleanServer(creds.server)+'/player_api.php');u.searchParams.set('username',creds.username);u.searchParams.set('password',creds.password);if(action)u.searchParams.set('action',action);Object.entries(extra).forEach(([k,v])=>u.searchParams.set(k,v));return u.toString()}
 async function api(action,extra={}){const r=await fetch('/api/iptv',{method:'POST',headers:{'Content-Type':'application/json'},cache:'no-store',body:JSON.stringify({server:creds.server,username:creds.username,password:creds.password,action,extra})});let data;try{data=await r.json()}catch{throw new Error('Réponse invalide du relais VELORA.')}if(!r.ok)throw new Error(data.error||('Réponse HTTP '+r.status));return data}
@@ -93,6 +104,10 @@ async function connectAccount(){
   $('connectBtn').textContent='Connexion…';
   showError('Tentative de connexion au serveur…');
   creds={server:cleanServer(serverInput),username:usernameInput,password:passwordInput};
+   try {
+     if($('rememberCredentials').checked) localStorage.setItem(CREDENTIALS_KEY,JSON.stringify(creds));
+     else localStorage.removeItem(CREDENTIALS_KEY);
+   } catch(e) { /* stockage indisponible : connexion possible sans mémorisation */ }
   try{
     const info=await api('');
     if(!info || (!info.user_info && !info.server_info)) throw new Error('Réponse inattendue du serveur. Vérifiez les informations.');
