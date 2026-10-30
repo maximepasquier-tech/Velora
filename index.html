@@ -107,7 +107,13 @@ async function api(action,extra={}){
  try{data=JSON.parse(raw)}catch{
    throw new Error('Réponse illisible du relais Cloudflare (HTTP '+response.status+').');
  }
- if(!response.ok) throw new Error(data.error||('Le relais Cloudflare a répondu HTTP '+response.status+'.'));
+ if(!response.ok){
+   const details=[];
+   if(data.upstreamStatus) details.push('Statut fournisseur : '+data.upstreamStatus);
+   if(data.upstreamContentType) details.push('Type de réponse : '+data.upstreamContentType);
+   if(data.upstreamPreview) details.push('Détail : '+String(data.upstreamPreview).slice(0,220));
+   throw new Error((data.error||('Le relais Cloudflare a répondu HTTP '+response.status+'.'))+(details.length?' — '+details.join(' | '):''));
+ }
  return data;
 }
 async function loadXmltv(){const r=await fetch('/api/iptv',{method:'POST',headers:{'Content-Type':'application/json'},cache:'no-store',body:JSON.stringify({server:creds.server,username:creds.username,password:creds.password,action:'xmltv'})});if(!r.ok){let d={};try{d=await r.json()}catch{}throw new Error(d.error||('Guide TV HTTP '+r.status))}const xml=await r.text();const doc=new DOMParser().parseFromString(xml,'application/xml');if(doc.querySelector('parsererror'))throw new Error('Guide TV XMLTV illisible');const now=Date.now();epgByChannel={};doc.querySelectorAll('programme').forEach(p=>{const id=p.getAttribute('channel');if(!id)return;const start=parseXmltvDate(p.getAttribute('start')),stop=parseXmltvDate(p.getAttribute('stop'));if(!start||!stop)return;const item={start,stop,title:p.querySelector('title')?.textContent||'Programme',desc:p.querySelector('desc')?.textContent||''};(epgByChannel[id] ||= []).push(item)});Object.values(epgByChannel).forEach(items=>items.sort((a,b)=>a.start-b.start));}
