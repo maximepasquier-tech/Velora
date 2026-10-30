@@ -91,7 +91,16 @@ module.exports = async function handler(req, res) {
       redirect: 'error'
     });
     if (!upstream.ok) {
-      return res.status(502).json({ error: 'Le fournisseur IPTV a répondu avec HTTP ' + upstream.status + '.' });
+      let detail = '';
+      try { detail = (await upstream.text()).slice(0, 700).replace(/[\\r\\n\\t]+/g, ' ').replace(/https?:\\/\\/[^\\s"'<>]+/g, '[adresse masquée]'); } catch {}
+      const serverHint = upstream.headers.get('server') || '';
+      const requestHint = upstream.headers.get('via') || '';
+      return res.status(502).json({
+        error: 'Le fournisseur IPTV a répondu avec HTTP ' + upstream.status + '.',
+        diagnostic: detail || 'Aucun détail fourni par le serveur.',
+        server: serverHint,
+        via: requestHint
+      });
     }
     const body = await upstream.text();
     if (body.length > (isXmltv ? 30 : 12) * 1024 * 1024) {
