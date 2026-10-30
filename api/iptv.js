@@ -81,7 +81,11 @@ module.exports = async function handler(req, res) {
 
     const upstream = await fetch(target, {
       method: 'GET',
-      headers: { Accept: 'application/json' },
+      headers: {
+        Accept: 'application/json, text/plain, */*',
+        'User-Agent': 'IPTVSmartersPro/1.1.1',
+        'Connection': 'keep-alive'
+      },
       signal: AbortSignal.timeout(15000),
       redirect: 'error'
     });
