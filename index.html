@@ -107,7 +107,7 @@ async function connectAccount(){
     const message=(err && err.message) ? err.message : String(err);
     creds=null;
     if(message==='Failed to fetch' || /network|load failed/i.test(message)){
-      showError('Safari ne parvient pas à joindre le serveur. Cause possible : blocage CORS par le fournisseur, adresse/port inaccessible ou certificat HTTPS. Vérifiez l’adresse dans Safari. Si elle s’ouvre mais que la connexion échoue ici, le fournisseur doit autoriser les requêtes depuis notre application web.');
+      showError('VELORA ne parvient pas à joindre son relais Vercel. Vérifiez votre connexion Internet et réessayez dans quelques instants.');
     }else{
       showError('Connexion impossible : '+message+'. Vérifiez l’adresse du serveur et vos identifiants.');
     }
