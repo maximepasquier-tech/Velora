@@ -71,7 +71,7 @@ const jsCheck=document.getElementById('jsCheck'); if(jsCheck) jsCheck.textConten
 let creds=null, live=[], films=[], series=[], liveCats=[], filmCats=[], seriesCats=[];
 const cleanServer=s=>s.trim().replace(/\/+$/,'');
 function apiUrl(action,extra={}){const u=new URL(cleanServer(creds.server)+'/player_api.php');u.searchParams.set('username',creds.username);u.searchParams.set('password',creds.password);if(action)u.searchParams.set('action',action);Object.entries(extra).forEach(([k,v])=>u.searchParams.set(k,v));return u.toString()}
-async function api(action,extra={}){const r=await fetch(apiUrl(action,extra));if(!r.ok)throw new Error('Réponse HTTP '+r.status);return await r.json()}
+async function api(action,extra={}){const r=await fetch('/api/iptv',{method:'POST',headers:{'Content-Type':'application/json'},cache:'no-store',body:JSON.stringify({server:creds.server,username:creds.username,password:creds.password,action,extra})});let data;try{data=await r.json()}catch{throw new Error('Réponse invalide du relais VELORA.')}if(!r.ok)throw new Error(data.error||('Réponse HTTP '+r.status));return data}
 function showError(msg){$('loginError').textContent=msg}
 function setStatus(t){$('status').textContent=t;$('connectionPill').textContent=t}
 function escapeHtml(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
