@@ -59,7 +59,7 @@ module.exports = async function handler(req, res) {
     }
 
     const allowedActions = new Set([
-      '', 'get_live_categories', 'get_live_streams',
+      '', 'xmltv', 'get_live_categories', 'get_live_streams',
       'get_vod_categories', 'get_vod_streams',
       'get_series_categories', 'get_series'
     ]);
@@ -67,10 +67,11 @@ module.exports = async function handler(req, res) {
       return res.status(400).json({ error: 'Action IPTV non autorisée.' });
     }
 
-    const target = new URL('player_api.php', base.href.endsWith('/') ? base.href : base.href + '/');
+    const isXmltv = action === 'xmltv';
+    const target = new URL(isXmltv ? 'xmltv.php' : 'player_api.php', base.href.endsWith('/') ? base.href : base.href + '/');
     target.searchParams.set('username', username);
     target.searchParams.set('password', password);
-    if (action) target.searchParams.set('action', action);
+    if (action && !isXmltv) target.searchParams.set('action', action);
     if (extra && typeof extra === 'object' && !Array.isArray(extra)) {
       for (const [key, value] of Object.entries(extra)) {
         if (/^[a-zA-Z0-9_]{1,40}$/.test(key) && ['category_id', 'series_id', 'vod_id'].includes(key)) {
@@ -93,8 +94,15 @@ module.exports = async function handler(req, res) {
       return res.status(502).json({ error: 'Le fournisseur IPTV a répondu avec HTTP ' + upstream.status + '.' });
     }
     const body = await upstream.text();
-    if (body.length > 12 * 1024 * 1024) {
+    if (body.length > (isXmltv ? 30 : 12) * 1024 * 1024) {
       return res.status(502).json({ error: 'Réponse du fournisseur trop volumineuse.' });
+    }
+    if (isXmltv) {
+      if (!body.includes('<tv') && !body.includes('<!DOCTYPE tv')) {
+        return res.status(502).json({ error: 'Le fournisseur n’a pas renvoyé de guide XMLTV valide.' });
+      }
+      res.setHeader('Content-Type', 'application/xml; charset=utf-8');
+      return res.status(200).send(body);
     }
     let data;
     try { data = JSON.parse(body); }
