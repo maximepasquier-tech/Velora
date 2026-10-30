@@ -88,7 +88,7 @@ async function connectAccount(){
   const usernameInput=$('username').value.trim();
   const passwordInput=$('password').value;
   if(!serverInput || !usernameInput || !passwordInput){showError('Remplissez les trois champs avant de continuer.');return;}
-  if(!/^https?:\\/\\//i.test(serverInput)){showError('L’adresse du serveur doit commencer par http:// ou https://');return;}
+  if(!/^https?:\/\//i.test(serverInput)){showError('L’adresse du serveur doit commencer par http:// ou https://');return;}
   $('connectBtn').disabled=true;
   $('connectBtn').textContent='Connexion…';
   showError('Tentative de connexion au serveur…');
